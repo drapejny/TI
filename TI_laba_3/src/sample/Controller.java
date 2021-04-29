@@ -126,10 +126,12 @@ public class Controller {
                     showAlert("Выбранный файл пуст");
                     return;
                 }
+                encText.setText("Enc: ");
                 fis.read(buffer, 0, buffer.length);
 
                 y = fastExp(g, x, p);
                 a = fastExp(g, k, p);
+                int counter = 0;
                 for (int i = 0; i < buffer.length; i++) {
                     int m = Byte.toUnsignedInt(buffer[i]);
                     b = (fastExp(y, k, p) * (m % p)) % p;
@@ -138,6 +140,10 @@ public class Controller {
                     encFout.write((byte) (b >> 8));
                     encFout.write((byte) b);
                     System.out.println(m + " [" + a + ", " + b + "]");
+                    if(counter < 5){
+                        encText.setText(encText.getText() + " " +  (a >> 8) + " " +  Byte.toUnsignedInt((byte)a) + " " +  (b >> 8) + " " +  Byte.toUnsignedInt((byte)b));
+                        counter++;
+                    }
                 }
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
@@ -148,11 +154,13 @@ public class Controller {
         });
 
         decryptButton.setOnAction(actionEvent -> {
+            decText.setText("Dec: ");
             byte[] buffer;
             try (FileInputStream fis = new FileInputStream("files\\enc");
                  FileOutputStream decFout = new FileOutputStream("files\\dec" + extencion)) {
                 buffer = new byte[fis.available()];
                 fis.read(buffer,0,buffer.length);
+                int counter = 0;
                 for(int i = 0; i < buffer.length; i += 4){
                     a = Byte.toUnsignedInt(buffer[i]);
                     a = (a << 8) + Byte.toUnsignedInt(buffer[i + 1]);
@@ -160,7 +168,9 @@ public class Controller {
                     b = (b << 8) + Byte.toUnsignedInt(buffer[i + 3]);
                     int m = b * fastExp(fastExp(a, x, p), p - 2, p) % p;
                     decFout.write((byte) m);
-                    System.out.println(m + " [" + a + ", " + b + "]");
+                    if(counter < 5){
+                        decText.setText(decText.getText() + " " + m);
+                    }
                 }
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
