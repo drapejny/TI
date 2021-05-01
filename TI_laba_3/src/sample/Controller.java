@@ -42,7 +42,7 @@ public class Controller {
     @FXML
     private Button decryptButton;
 
-    File file = new File("files\\test.txt");
+    File file; //= new File("files\\test.txt");
     String extencion;
     public ObservableList<Integer> observableList = FXCollections.observableArrayList();
 
@@ -63,15 +63,16 @@ public class Controller {
                 gText.setText("g = " + observableList.get(primRootsListView.getSelectionModel().getSelectedIndex()));
             }
         });
-
         encryptButton.setVisible(false);
 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
         generateButton.setOnAction(actionEvent -> {
             encryptButton.setVisible(false);
             try {
                 p = Integer.parseInt(pTextField.getText());
-                if (p < 1)
+                if (p < 255 || p > 65533) {
                     throw new Exception();
+                }
             } catch (Exception e) {
                 showAlert("Некорректный ввод p");
                 observableList.clear();
@@ -83,14 +84,19 @@ public class Controller {
                 return;
             }
             observableList.clear();
+            int counter = 0;
             for (int i = 1; i < p; i++) {
-                if (isPrimRoot(p, i))
+                if (isPrimRoot(p, i)) {
+                    counter++;
                     observableList.add(i);
+                }
             }
+            System.out.println(counter);
             primRootsListView.setItems(observableList);
             encryptButton.setVisible(true);
         });
 
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         encryptButton.setOnAction(actionEvent -> {
             if (primRootsListView.getSelectionModel().getSelectedIndex() == -1) {
                 showAlert("Не выбрано значение g");
@@ -139,10 +145,16 @@ public class Controller {
                     encFout.write((byte) a);
                     encFout.write((byte) (b >> 8));
                     encFout.write((byte) b);
-                    System.out.println(m + " [" + a + ", " + b + "]");
-                    if(counter < 5){
-                        encText.setText(encText.getText() + " " +  (a >> 8) + " " +  Byte.toUnsignedInt((byte)a) + " " +  (b >> 8) + " " +  Byte.toUnsignedInt((byte)b));
-                        counter++;
+
+                    if (buffer.length < 10) {
+                        encText.setText(encText.getText() + " " + a + " " + b);
+                        //encText.setText(encText.getText() + " " + (a >> 8) + " " + Byte.toUnsignedInt((byte) a) + " " + (b >> 8) + " " + Byte.toUnsignedInt((byte) b));
+                    } else if (i < 5 || i >= buffer.length - 5) {
+
+                        encText.setText(encText.getText() + " " + a + " " + b);
+                        //encText.setText(encText.getText() + " " + (a >> 8) + " " + Byte.toUnsignedInt((byte) a) + " " + (b >> 8) + " " + Byte.toUnsignedInt((byte) b));
+                    } else if (i == 5) {
+                        encText.setText(encText.getText() + " ... ");
                     }
                 }
             } catch (FileNotFoundException e) {
@@ -153,24 +165,31 @@ public class Controller {
 
         });
 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////
         decryptButton.setOnAction(actionEvent -> {
             decText.setText("Dec: ");
             byte[] buffer;
             try (FileInputStream fis = new FileInputStream("files\\enc");
                  FileOutputStream decFout = new FileOutputStream("files\\dec" + extencion)) {
                 buffer = new byte[fis.available()];
-                fis.read(buffer,0,buffer.length);
+                fis.read(buffer, 0, buffer.length);
                 int counter = 0;
-                for(int i = 0; i < buffer.length; i += 4){
+                for (int i = 0; i < buffer.length; i += 4) {
                     a = Byte.toUnsignedInt(buffer[i]);
                     a = (a << 8) + Byte.toUnsignedInt(buffer[i + 1]);
                     b = Byte.toUnsignedInt(buffer[i + 2]);
                     b = (b << 8) + Byte.toUnsignedInt(buffer[i + 3]);
                     int m = b * fastExp(fastExp(a, x, p), p - 2, p) % p;
                     decFout.write((byte) m);
-                    if(counter < 5){
+                    if (buffer.length < 40) {
                         decText.setText(decText.getText() + " " + m);
+                    } else if (i < 20 || i >= buffer.length - 20) {
+                        decText.setText(decText.getText() + " " + m);
+                    } else if (i == 20) {
+                        decText.setText(decText.getText() + " ... ");
                     }
+
+
                 }
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
@@ -247,6 +266,7 @@ public class Controller {
             else b %= a;
         return a + b;
     }
+
 
     public void showAlert(String textOfError) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
