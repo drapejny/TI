@@ -37,14 +37,14 @@ public class Controller {
     @FXML
     private Label _sText;
 
-    int p;
-    int q;
-    int r;
-    int u;
-    int e;
-    int d;
-    int hash;
-    int s;
+    long p;
+    long q;
+    long r;
+    long u;
+    long e;
+    long d;
+    long hash;
+    long s;
     File fileToSign;
 
     public void initialize() {
@@ -58,9 +58,9 @@ public class Controller {
                     return;
                 }
                 hash = hashFunction(bytes, r);
-                hashText.setText(Integer.toString(hash));
+                hashText.setText(Long.toString(hash));
                 s = fastExp(hash, d, r);
-                SText.setText(Integer.toString(s));
+                SText.setText(Long.toString(s));
                 writeSignedFile(s);
             }
         });
@@ -85,21 +85,21 @@ public class Controller {
                     return;
                 }
 
-                int m = fastExp(signature, e, r);
+                long m = fastExp(signature, e, r);
 
                 message = message.substring(0, sigIndex);
 
                 byte[] bytes = message.getBytes();
 
-                int messageHash = hashFunction(bytes, r);
+                long messageHash = hashFunction(bytes, r);
 
                 if(m == messageHash)
                     showSucces("Подпись принадлежит отправителю");
                 else showError("Подпись не принадлежит отправителю");
 
-                mText.setText(Integer.toString(m));
-                _mText.setText(Integer.toString(messageHash));
-                _sText.setText(Integer.toString(signature));
+                mText.setText(Long.toString(m));
+                _mText.setText(Long.toString(messageHash));
+                _sText.setText(Long.toString(signature));
             }
         });
     }
@@ -125,19 +125,20 @@ public class Controller {
         return result;
     }
 
-    public void writeSignedFile(int s) {
+    public void writeSignedFile(long s) {
         try (FileWriter fileWriter = new FileWriter(fileToSign, true)) {
-            String signature = Integer.toString(s);
+            String signature = Long.toString(s);
             fileWriter.write("|" + signature);
         } catch (IOException ioException) {
             ioException.printStackTrace();
         }
     }
 
-    public int hashFunction(byte[] bytes, int r) {
-        int h = 100;
+    public long hashFunction(byte[] bytes, long r) {
+        long h = 100;
+        h = h % r;
         for (int i = 0; i < bytes.length; i++) {
-            int mi = Byte.toUnsignedInt(bytes[i]);
+            long mi = Byte.toUnsignedLong(bytes[i]);
             System.out.println("hash " + h + " mi " + mi );
             h = fastExp(h + mi, 2, r);
         }
@@ -168,8 +169,8 @@ public class Controller {
     public boolean setParameters() {
         //проверка p
         try {
-            p = Integer.parseInt(pTextField.getText());
-            if (p < 2 || p > 46340 || !isSimple(p))
+            p = Long.parseLong(pTextField.getText());
+            if (p < 2 || p > 2147483646 || !isSimple(p))
                 throw new Exception();
         } catch (Exception exception) {
             showError("Неверный ввод p");
@@ -177,8 +178,8 @@ public class Controller {
         }
         //проверка q
         try {
-            q = Integer.parseInt(qTextField.getText());
-            if (q < 2 || q == p || !isSimple(q))
+            q = Long.parseLong(qTextField.getText());
+            if (q < 2 || q == p  || q > 2147483647 || !isSimple(q))
                 throw new Exception();
         } catch (Exception exception) {
             showError("Неверный ввод q");
@@ -188,7 +189,7 @@ public class Controller {
         u = (p - 1) * (q - 1);
         //проверка e
         try {
-            d = Integer.parseInt(dTextField.getText());
+            d = Long.parseLong(dTextField.getText());
             if (d < 2 || d >= u || NOD(u, d) != 1) {
                 throw new Exception();
             }
@@ -197,24 +198,24 @@ public class Controller {
             return false;
         }
         e = euclid(u, d);
-        eText.setText(Integer.toString(e));
-        rText.setText(Integer.toString(r));
+        eText.setText(Long.toString(e));
+        rText.setText(Long.toString(r));
 
         return true;
     }
 
-    public int euclid(int a, int b) {
-        int d0 = a;
-        int d1 = b;
-        int x0 = 1;
-        int x1 = 0;
-        int y0 = 0;
-        int y1 = 1;
+    public long euclid(long a, long b) {
+        long d0 = a;
+        long d1 = b;
+        long x0 = 1;
+        long x1 = 0;
+        long y0 = 0;
+        long y1 = 1;
         while (d1 > 1) {
-            int q = d0 / d1;
-            int d2 = d0 % d1;
-            int x2 = x0 - q * x1;
-            int y2 = y0 - q * y1;
+            long q = d0 / d1;
+            long d2 = d0 % d1;
+            long x2 = x0 - q * x1;
+            long y2 = y0 - q * y1;
             d0 = d1;
             d1 = d2;
             x0 = x1;
@@ -228,9 +229,9 @@ public class Controller {
     }
 
 
-    public int fastExp(int value, int stepen, int mod) {
+    public long fastExp(long value, long stepen, long mod) {
         value = value % mod;
-        int result = 1;
+        long result = 1;
         while (stepen != 0) {
             while ((stepen % 2) == 0) {
                 stepen = stepen / 2;
@@ -242,14 +243,14 @@ public class Controller {
         return result;
     }
 
-    public int NOD(int a, int b) {
+    public long NOD(long a, long b) {
         while (a > 0 && b > 0)
             if (a > b) a %= b;
             else b %= a;
         return a + b;
     }
 
-    public boolean isSimple(int num) {
+    public boolean isSimple(long num) {
         for (int i = 2; i <= Math.sqrt(num); i++) {
             if (num % i == 0) {
                 return false;
